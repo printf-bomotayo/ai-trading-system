@@ -989,6 +989,676 @@ class MarketAnalysisAgent(BaseAgent):
         
         return ". ".join(reasoning_parts)
 
+
+class RiskAssessmentAgent(BaseAgent):
+    """
+    AI Agent specialized in risk management, position sizing, and downside protection.
+    Focuses on capital preservation and risk-adjusted returns.
+    """
+    
+    def __init__(self):
+        super().__init__(AgentType.RISK_ASSESSMENT)
+        self.max_position_size = 0.10  # Max 10% of portfolio per position
+        self.max_sector_exposure = 0.25  # Max 25% exposure to any sector
+        self.volatility_threshold = 0.30  # 30% annualized volatility threshold
+        self.correlation_threshold = 0.7  # High correlation threshold
+        
+    async def analyze(self, context: Dict[str, Any]) -> AgentResponse:
+        """Analyze risk factors and provide risk-adjusted recommendation"""
+        
+        market_data = context["market_data"]
+        news_events = context["news_events"]
+        symbol = context["symbol"]
+        event_type = context.get("event_type")
+        
+        # Perform comprehensive risk analysis
+        volatility_analysis = self._analyze_volatility(market_data)
+        position_sizing = self._calculate_position_sizing(market_data, volatility_analysis)
+        downside_analysis = self._analyze_downside_risk(market_data, news_events)
+        portfolio_risk = self._assess_portfolio_risk(market_data, symbol)
+        tail_risk = self._assess_tail_risk(market_data, event_type)
+        
+        # Combine risk assessments
+        risk_assessment = self._combine_risk_assessments(
+            volatility_analysis, position_sizing, downside_analysis, 
+            portfolio_risk, tail_risk, event_type
+        )
+        
+        # Determine risk-adjusted recommendation
+        recommendation = self._determine_risk_adjusted_recommendation(risk_assessment, market_data)
+        
+        return AgentResponse(
+            agent_type=self.agent_type,
+            confidence=risk_assessment["confidence"],
+            recommendation=recommendation,
+            reasoning=risk_assessment["reasoning"],
+            supporting_data=risk_assessment,
+            timestamp=datetime.now(),
+            risk_score=risk_assessment["overall_risk_score"],
+            target_price=risk_assessment.get("risk_adjusted_target"),
+            stop_loss=risk_assessment.get("stop_loss_level")
+        )
+    
+    def _analyze_volatility(self, market_data: MarketData) -> Dict[str, Any]:
+        """Analyze volatility characteristics and risk"""
+        
+        # Mock volatility calculation (would use historical price data)
+        price_volatility = self._calculate_mock_volatility(market_data.price)
+        
+        # VIX analysis
+        vix_level = market_data.vix or 20.0
+        vix_regime = "low" if vix_level < 15 else "normal" if vix_level < 25 else "high" if vix_level < 35 else "extreme"
+        
+        # Volatility risk assessment
+        vol_risk_score = min(1.0, price_volatility / self.volatility_threshold)
+        
+        return {
+            "price_volatility": price_volatility,
+            "vix_level": vix_level,
+            "vix_regime": vix_regime,
+            "volatility_risk_score": vol_risk_score,
+            "is_high_volatility": price_volatility > self.volatility_threshold
+        }
+    
+    def _calculate_position_sizing(self, market_data: MarketData, volatility_analysis: Dict) -> Dict[str, Any]:
+        """Calculate appropriate position size based on risk"""
+        
+        base_position_size = self.max_position_size
+        volatility_adjustment = 1.0 - (volatility_analysis["volatility_risk_score"] * 0.5)
+        
+        # Adjust for market conditions
+        vix_adjustment = 1.0
+        if volatility_analysis["vix_regime"] == "high":
+            vix_adjustment = 0.7
+        elif volatility_analysis["vix_regime"] == "extreme":
+            vix_adjustment = 0.5
+        
+        # Calculate final position size
+        recommended_position_size = base_position_size * volatility_adjustment * vix_adjustment
+        recommended_position_size = max(0.01, min(self.max_position_size, recommended_position_size))
+        
+        return {
+            "base_position_size": base_position_size,
+            "volatility_adjustment": volatility_adjustment,
+            "vix_adjustment": vix_adjustment,
+            "recommended_position_size": recommended_position_size,
+            "risk_adjustment_factor": volatility_adjustment * vix_adjustment
+        }
+    
+    def _analyze_downside_risk(self, market_data: MarketData, news_events: List[NewsEvent]) -> Dict[str, Any]:
+        """Analyze potential downside scenarios"""
+        
+        current_price = market_data.price
+        
+        # Calculate potential drawdown scenarios
+        scenarios = {
+            "mild_correction": current_price * 0.95,  # 5% drop
+            "moderate_correction": current_price * 0.90,  # 10% drop
+            "severe_correction": current_price * 0.80,  # 20% drop
+        }
+        
+        # Assess probability of each scenario based on news and market conditions
+        scenario_probabilities = self._calculate_scenario_probabilities(news_events, market_data)
+        
+        # Calculate expected downside
+        expected_downside = sum(
+            (current_price - price) * prob 
+            for (scenario, price), prob in zip(scenarios.items(), scenario_probabilities.values())
+        )
+        
+        # Value at Risk estimation (1% VaR)
+        var_1_percent = self._calculate_var(current_price, market_data)
+        
+        return {
+            "scenarios": scenarios,
+            "scenario_probabilities": scenario_probabilities,
+            "expected_downside": expected_downside,
+            "var_1_percent": var_1_percent,
+            "max_tolerable_loss": current_price * 0.02,  # 2% max loss tolerance
+            "downside_risk_score": min(1.0, expected_downside / (current_price * 0.1))
+        }
+    
+    def _assess_portfolio_risk(self, market_data: MarketData, symbol: str) -> Dict[str, Any]:
+        """Assess portfolio-level risk implications"""
+        
+        # Mock portfolio analysis (would integrate with actual portfolio data)
+        current_sector_exposure = 0.15  # Mock 15% tech exposure
+        sector = market_data.sector or "Unknown"
+        
+        # Check sector concentration risk
+        sector_risk = "high" if current_sector_exposure > self.max_sector_exposure else "normal"
+        
+        # Mock correlation analysis
+        portfolio_correlation = self._calculate_mock_correlation(symbol)
+        correlation_risk = "high" if portfolio_correlation > self.correlation_threshold else "normal"
+        
+        return {
+            "current_sector_exposure": current_sector_exposure,
+            "sector": sector,
+            "sector_risk": sector_risk,
+            "portfolio_correlation": portfolio_correlation,
+            "correlation_risk": correlation_risk,
+            "diversification_score": 1.0 - portfolio_correlation
+        }
+    
+    def _assess_tail_risk(self, market_data: MarketData, event_type: Optional[MarketEventType]) -> Dict[str, Any]:
+        """Assess tail risk and black swan scenarios"""
+        
+        # Base tail risk assessment
+        base_tail_risk = 0.1
+        
+        # Adjust based on event type
+        event_risk_multipliers = {
+            MarketEventType.GEOPOLITICAL_SHOCK: 3.0,
+            MarketEventType.FED_ANNOUNCEMENT: 2.0,
+            MarketEventType.EARNINGS_SURPRISE: 1.5,
+            MarketEventType.VIX_SPIKE: 2.5,
+            MarketEventType.SECTOR_ROTATION: 1.3
+        }
+        
+        tail_risk_multiplier = event_risk_multipliers.get(event_type, 1.0)
+        tail_risk_score = min(1.0, base_tail_risk * tail_risk_multiplier)
+        
+        # Market stress indicators
+        vix_level = market_data.vix or 20.0
+        stress_level = "low" if vix_level < 20 else "medium" if vix_level < 30 else "high"
+        
+        return {
+            "base_tail_risk": base_tail_risk,
+            "event_risk_multiplier": tail_risk_multiplier,
+            "tail_risk_score": tail_risk_score,
+            "market_stress_level": stress_level,
+            "black_swan_probability": tail_risk_score * 0.1
+        }
+    
+    def _combine_risk_assessments(self, volatility: Dict, position_sizing: Dict, downside: Dict, portfolio: Dict, tail_risk: Dict, event_type: Optional[MarketEventType]) -> Dict[str, Any]:
+        """Combine all risk assessments into unified risk profile"""
+        
+        # Calculate component risk scores
+        volatility_risk = volatility["volatility_risk_score"]
+        downside_risk = downside["downside_risk_score"]
+        portfolio_risk = 0.5 if portfolio["sector_risk"] == "normal" and portfolio["correlation_risk"] == "normal" else 0.8
+        tail_risk_score = tail_risk["tail_risk_score"]
+        
+        # Weight risk components
+        risk_weights = {
+            "volatility": 0.25,
+            "downside": 0.30,
+            "portfolio": 0.25,
+            "tail_risk": 0.20
+        }
+        
+        # Adjust weights based on event type
+        if event_type in [MarketEventType.GEOPOLITICAL_SHOCK, MarketEventType.VIX_SPIKE]:
+            risk_weights["tail_risk"] += 0.1
+            risk_weights["volatility"] -= 0.1
+        
+        # Calculate overall risk score
+        overall_risk_score = (
+            volatility_risk * risk_weights["volatility"] +
+            downside_risk * risk_weights["downside"] +
+            portfolio_risk * risk_weights["portfolio"] +
+            tail_risk_score * risk_weights["tail_risk"]
+        )
+        
+        # Calculate confidence (higher when risk assessment is clear)
+        risk_clarity = abs(overall_risk_score - 0.5) * 2  # 0-1 scale
+        confidence = 0.6 + (risk_clarity * 0.3)  # 0.6-0.9 range
+        
+        # Risk-adjusted targets
+        risk_adjusted_target = self._calculate_risk_adjusted_target(downside, overall_risk_score)
+        stop_loss_level = self._calculate_stop_loss_level(downside, overall_risk_score)
+        
+        # Build risk reasoning
+        reasoning = self._build_risk_reasoning(volatility, downside, portfolio, tail_risk, overall_risk_score)
+        
+        return {
+            "overall_risk_score": overall_risk_score,
+            "confidence": confidence,
+            "volatility_risk": volatility_risk,
+            "downside_risk": downside_risk,
+            "portfolio_risk": portfolio_risk,
+            "tail_risk_score": tail_risk_score,
+            "recommended_position_size": position_sizing["recommended_position_size"],
+            "risk_adjusted_target": risk_adjusted_target,
+            "stop_loss_level": stop_loss_level,
+            "reasoning": reasoning
+        }
+    
+    def _determine_risk_adjusted_recommendation(self, risk_assessment: Dict, market_data: MarketData) -> TradeAction:
+        """Determine recommendation with risk management overlay"""
+        
+        overall_risk = risk_assessment["overall_risk_score"]
+        confidence = risk_assessment["confidence"]
+        
+        # High risk situations - be very conservative
+        if overall_risk > 0.75:
+            return TradeAction.HOLD
+        
+        # Medium-high risk - only strong signals
+        if overall_risk > 0.6 and confidence < 0.8:
+            return TradeAction.HOLD
+        
+        # Low confidence in risk assessment
+        if confidence < 0.6:
+            return TradeAction.HOLD
+        
+        # If we reach here, risk is manageable, but still be conservative
+        # Return neutral recommendation - let other agents drive the decision
+        return TradeAction.HOLD
+    
+    # Helper methods
+    def _calculate_mock_volatility(self, price: float) -> float:
+        """Mock volatility calculation"""
+        return 0.15 + (hash(str(price)) % 30) / 100  # 15-45% annualized
+    
+    def _calculate_scenario_probabilities(self, news_events: List[NewsEvent], market_data: MarketData) -> Dict[str, float]:
+        """Calculate probabilities for different downside scenarios"""
+        base_probs = {"mild_correction": 0.3, "moderate_correction": 0.15, "severe_correction": 0.05}
+        
+        # Adjust based on news sentiment
+        negative_news_count = sum(1 for event in news_events if event.sentiment_score < -0.3)
+        if negative_news_count > 0:
+            multiplier = 1 + (negative_news_count * 0.5)
+            for scenario in base_probs:
+                base_probs[scenario] = min(0.8, base_probs[scenario] * multiplier)
+        
+        return base_probs
+    
+    def _calculate_var(self, price: float, market_data: MarketData) -> float:
+        """Calculate Value at Risk (1% probability)"""
+        volatility = self._calculate_mock_volatility(price)
+        return price * volatility * 2.33  # 1% VaR approximation
+    
+    def _calculate_mock_correlation(self, symbol: str) -> float:
+        """Mock portfolio correlation calculation"""
+        return 0.3 + (hash(symbol) % 50) / 100  # 0.3-0.8 correlation
+    
+    def _calculate_risk_adjusted_target(self, downside: Dict, risk_score: float) -> float:
+        """Calculate risk-adjusted price target"""
+        scenarios = downside["scenarios"]
+        mild_correction = scenarios["mild_correction"]
+        
+        # Conservative target based on risk level
+        risk_discount = risk_score * 0.1  # Up to 10% discount for high risk
+        return mild_correction * (1 - risk_discount)
+    
+    def _calculate_stop_loss_level(self, downside: Dict, risk_score: float) -> float:
+        """Calculate appropriate stop loss level"""
+        max_tolerable_loss = downside["max_tolerable_loss"]
+        
+        # Tighter stops for higher risk
+        risk_adjustment = 1.0 - (risk_score * 0.3)
+        return max_tolerable_loss * risk_adjustment
+    
+    def _build_risk_reasoning(self, volatility: Dict, downside: Dict, portfolio: Dict, tail_risk: Dict, overall_risk: float) -> str:
+        """Build comprehensive risk reasoning"""
+        
+        reasoning_parts = []
+        
+        # Overall risk assessment
+        risk_level = "high" if overall_risk > 0.7 else "medium" if overall_risk > 0.4 else "low"
+        reasoning_parts.append(f"Overall risk assessment: {risk_level} ({overall_risk:.2f})")
+        
+        # Volatility concerns
+        if volatility["is_high_volatility"]:
+            reasoning_parts.append(f"High volatility detected ({volatility['price_volatility']:.1%})")
+        
+        # VIX regime
+        if volatility["vix_regime"] in ["high", "extreme"]:
+            reasoning_parts.append(f"Market stress elevated (VIX: {volatility['vix_level']:.1f})")
+        
+        # Portfolio risks
+        if portfolio["sector_risk"] == "high":
+            reasoning_parts.append(f"Sector concentration risk in {portfolio['sector']}")
+        
+        if portfolio["correlation_risk"] == "high":
+            reasoning_parts.append(f"High portfolio correlation ({portfolio['portfolio_correlation']:.2f})")
+        
+        # Tail risk
+        if tail_risk["tail_risk_score"] > 0.3:
+            reasoning_parts.append(f"Elevated tail risk ({tail_risk['market_stress_level']} stress)")
+        
+        # Position sizing recommendation
+        pos_size = downside.get("recommended_position_size", 0.05)
+        reasoning_parts.append(f"Recommended position size: {pos_size:.1%}")
+        
+        return ". ".join(reasoning_parts)
+
+
+class SentimentAnalysisAgent(BaseAgent):
+    """
+    AI Agent specialized in market sentiment analysis from multiple sources.
+    Analyzes social media, options flow, analyst sentiment, and market positioning.
+    """
+    
+    def __init__(self):
+        super().__init__(AgentType.SENTIMENT_ANALYSIS)
+        self.sentiment_sources = [
+            "social_media", "options_flow", "analyst_ratings", 
+            "insider_trading", "institutional_flow", "retail_sentiment"
+        ]
+        self.sentiment_weights = {
+            "options_flow": 0.25,
+            "institutional_flow": 0.25,
+            "analyst_ratings": 0.20,
+            "social_media": 0.15,
+            "insider_trading": 0.10,
+            "retail_sentiment": 0.05
+        }
+        
+    async def analyze(self, context: Dict[str, Any]) -> AgentResponse:
+        """Analyze market sentiment from multiple sources"""
+        
+        market_data = context["market_data"]
+        news_events = context["news_events"]
+        symbol = context["symbol"]
+        event_type = context.get("event_type")
+        
+        # Analyze different sentiment sources
+        options_sentiment = self._analyze_options_sentiment(market_data, symbol)
+        social_sentiment = self._analyze_social_media_sentiment(news_events, symbol)
+        analyst_sentiment = self._analyze_analyst_sentiment(symbol)
+        institutional_sentiment = self._analyze_institutional_sentiment(market_data, symbol)
+        insider_sentiment = self._analyze_insider_sentiment(symbol)
+        retail_sentiment = self._analyze_retail_sentiment(market_data, symbol)
+        
+        # Combine sentiment analyses
+        combined_sentiment = self._combine_sentiment_analyses(
+            options_sentiment, social_sentiment, analyst_sentiment,
+            institutional_sentiment, insider_sentiment, retail_sentiment, event_type
+        )
+        
+        # Determine sentiment-based recommendation
+        recommendation = self._determine_sentiment_recommendation(combined_sentiment)
+        
+        return AgentResponse(
+            agent_type=self.agent_type,
+            confidence=combined_sentiment["confidence"],
+            recommendation=recommendation,
+            reasoning=combined_sentiment["reasoning"],
+            supporting_data=combined_sentiment,
+            timestamp=datetime.now(),
+            risk_score=combined_sentiment.get("sentiment_risk_score", 0.5)
+        )
+    
+    def _analyze_options_sentiment(self, market_data: MarketData, symbol: str) -> Dict[str, Any]:
+        """Analyze options flow and positioning"""
+        
+        # Mock options data (would come from options chain APIs)
+        put_call_ratio = 0.6 + (hash(symbol) % 80) / 100  # 0.6-1.4 range
+        
+        # Options sentiment interpretation
+        options_bias = "bullish" if put_call_ratio < 0.8 else "bearish" if put_call_ratio > 1.2 else "neutral"
+        
+        # Mock unusual options activity
+        unusual_activity = hash(str(market_data.volume)) % 4 == 0
+        activity_type = "calls" if hash(symbol) % 2 == 0 else "puts"
+        
+        # Smart money indicators
+        smart_money_flow = self._analyze_smart_money_options(put_call_ratio, unusual_activity)
+        
+        return {
+            "put_call_ratio": put_call_ratio,
+            "options_bias": options_bias,
+            "unusual_activity": unusual_activity,
+            "activity_type": activity_type,
+            "smart_money_flow": smart_money_flow,
+            "options_sentiment_score": self._score_options_sentiment(put_call_ratio, smart_money_flow)
+        }
+    
+    def _analyze_social_media_sentiment(self, news_events: List[NewsEvent], symbol: str) -> Dict[str, Any]:
+        """Analyze social media and retail sentiment"""
+        
+        # Aggregate sentiment from news (proxy for social sentiment)
+        social_scores = [event.sentiment_score for event in news_events if symbol in event.symbols_mentioned]
+        
+        if not social_scores:
+            avg_sentiment = 0.0
+            sentiment_volume = 0
+        else:
+            avg_sentiment = sum(social_scores) / len(social_scores)
+            sentiment_volume = len(social_scores)
+        
+        # Mock social media metrics
+        mention_volume = sentiment_volume * 100  # Mock mentions
+        sentiment_momentum = self._calculate_sentiment_momentum(avg_sentiment)
+        
+        # Retail sentiment classification
+        retail_bias = "bullish" if avg_sentiment > 0.3 else "bearish" if avg_sentiment < -0.3 else "neutral"
+        
+        return {
+            "average_sentiment": avg_sentiment,
+            "mention_volume": mention_volume,
+            "sentiment_momentum": sentiment_momentum,
+            "retail_bias": retail_bias,
+            "sentiment_strength": abs(avg_sentiment),
+            "social_sentiment_score": avg_sentiment
+        }
+    
+    def _analyze_analyst_sentiment(self, symbol: str) -> Dict[str, Any]:
+        """Analyze Wall Street analyst sentiment"""
+        
+        # Mock analyst data
+        analyst_ratings = {
+            "strong_buy": hash(symbol + "sb") % 5,
+            "buy": hash(symbol + "b") % 8,
+            "hold": hash(symbol + "h") % 10,
+            "sell": hash(symbol + "s") % 3,
+            "strong_sell": hash(symbol + "ss") % 2
+        }
+        
+        total_ratings = sum(analyst_ratings.values())
+        
+        # Calculate weighted sentiment
+        weights = {"strong_buy": 1.0, "buy": 0.5, "hold": 0.0, "sell": -0.5, "strong_sell": -1.0}
+        weighted_score = sum(count * weights[rating] for rating, count in analyst_ratings.items())
+        
+        if total_ratings > 0:
+            analyst_sentiment_score = weighted_score / total_ratings
+        else:
+            analyst_sentiment_score = 0.0
+        
+        # Recent rating changes
+        recent_upgrades = hash(symbol + "upgrade") % 3
+        recent_downgrades = hash(symbol + "downgrade") % 3
+        rating_momentum = "positive" if recent_upgrades > recent_downgrades else "negative" if recent_downgrades > recent_upgrades else "stable"
+        
+        return {
+            "analyst_ratings": analyst_ratings,
+            "total_analysts": total_ratings,
+            "analyst_sentiment_score": analyst_sentiment_score,
+            "recent_upgrades": recent_upgrades,
+            "recent_downgrades": recent_downgrades,
+            "rating_momentum": rating_momentum
+        }
+    
+    def _analyze_institutional_sentiment(self, market_data: MarketData, symbol: str) -> Dict[str, Any]:
+        """Analyze institutional investor sentiment and flow"""
+        
+        # Mock institutional flow data
+        institutional_flow = (hash(symbol + "inst") % 200 - 100) / 100  # -1 to 1
+        
+        # Flow classification
+        flow_strength = "strong_inflow" if institutional_flow > 0.5 else "inflow" if institutional_flow > 0.1 else "strong_outflow" if institutional_flow < -0.5 else "outflow" if institutional_flow < -0.1 else "neutral"
+        
+        # Mock fund positioning
+        fund_positioning = {
+            "overweight": hash(symbol + "ow") % 30,
+            "neutral": hash(symbol + "n") % 40,
+            "underweight": hash(symbol + "uw") % 30
+        }
+        
+        # Calculate positioning bias
+        total_positions = sum(fund_positioning.values())
+        positioning_score = (fund_positioning["overweight"] - fund_positioning["underweight"]) / max(total_positions, 1)
+        
+        return {
+            "institutional_flow": institutional_flow,
+            "flow_strength": flow_strength,
+            "fund_positioning": fund_positioning,
+            "positioning_score": positioning_score,
+            "institutional_sentiment_score": (institutional_flow + positioning_score) / 2
+        }
+    
+    def _analyze_insider_sentiment(self, symbol: str) -> Dict[str, Any]:
+        """Analyze insider trading activity"""
+        
+        # Mock insider trading data
+        insider_buys = hash(symbol + "buy") % 5
+        insider_sells = hash(symbol + "sell") % 8
+        
+        # Calculate insider sentiment
+        if insider_buys + insider_sells == 0:
+            insider_ratio = 0
+        else:
+            insider_ratio = (insider_buys - insider_sells) / (insider_buys + insider_sells)
+        
+        insider_bias = "bullish" if insider_ratio > 0.2 else "bearish" if insider_ratio < -0.2 else "neutral"
+        
+        return {
+            "insider_buys": insider_buys,
+            "insider_sells": insider_sells,
+            "insider_ratio": insider_ratio,
+            "insider_bias": insider_bias,
+            "insider_sentiment_score": insider_ratio
+        }
+    
+    def _analyze_retail_sentiment(self, market_data: MarketData, symbol: str) -> Dict[str, Any]:
+        """Analyze retail investor sentiment"""
+        
+        # Mock retail sentiment indicators
+        retail_volume_ratio = market_data.volume / 1000000  # Normalize volume
+        retail_activity = "high" if retail_volume_ratio > 1.5 else "normal" if retail_volume_ratio > 0.7 else "low"
+        
+        # Mock retail positioning
+        retail_long_short_ratio = 1.2 + (hash(symbol + "retail") % 160) / 100  # 1.2-2.8
+        retail_bias = "bullish" if retail_long_short_ratio > 2.0 else "bearish" if retail_long_short_ratio < 1.5 else "neutral"
+        
+        return {
+            "retail_activity": retail_activity,
+            "retail_long_short_ratio": retail_long_short_ratio,
+            "retail_bias": retail_bias,
+            "retail_sentiment_score": (retail_long_short_ratio - 1.5) / 1.3  # Normalize to -1 to 1
+        }
+    
+    def _combine_sentiment_analyses(self, options: Dict, social: Dict, analyst: Dict, institutional: Dict, insider: Dict, retail: Dict, event_type: Optional[MarketEventType]) -> Dict[str, Any]:
+        """Combine all sentiment sources into unified sentiment assessment"""
+        
+        # Extract sentiment scores
+        sentiment_scores = {
+            "options_flow": options["options_sentiment_score"],
+            "social_media": social["social_sentiment_score"],
+            "analyst_ratings": analyst["analyst_sentiment_score"],
+            "institutional_flow": institutional["institutional_sentiment_score"],
+            "insider_trading": insider["insider_sentiment_score"],
+            "retail_sentiment": retail["retail_sentiment_score"]
+        }
+        
+        # Apply weights and calculate overall sentiment
+        overall_sentiment = sum(
+            score * self.sentiment_weights[source] 
+            for source, score in sentiment_scores.items()
+        )
+        
+        # Adjust weights based on event type
+        if event_type == MarketEventType.EARNINGS_SURPRISE:
+            # Options flow more important during earnings
+            overall_sentiment += (options["options_sentiment_score"] - overall_sentiment) * 0.2
+        
+        # Calculate sentiment confidence based on source agreement
+        sentiment_agreement = self._calculate_sentiment_agreement(sentiment_scores)
+        confidence = 0.5 + (sentiment_agreement * 0.4)
+        
+        # Sentiment momentum and divergences
+        momentum_analysis = self._analyze_sentiment_momentum(sentiment_scores)
+        
+        # Risk assessment from sentiment extremes
+        sentiment_risk_score = self._calculate_sentiment_risk(overall_sentiment, sentiment_agreement)
+        
+        # Build reasoning
+        reasoning = self._build_sentiment_reasoning(sentiment_scores, overall_sentiment, momentum_analysis)
+        
+        return {
+            "overall_sentiment": overall_sentiment,
+            "confidence": confidence,
+            "sentiment_scores": sentiment_scores,
+            "sentiment_agreement": sentiment_agreement,
+            "momentum_analysis": momentum_analysis,
+            "sentiment_risk_score": sentiment_risk_score,
+            "reasoning": reasoning
+        }
+    
+    def _determine_sentiment_recommendation(self, sentiment_analysis: Dict) -> TradeAction:
+        """Determine recommendation based on sentiment analysis"""
+        
+        overall_sentiment = sentiment_analysis["overall_sentiment"]
+        confidence = sentiment_analysis["confidence"]
+        
+        # Only act on high-confidence sentiment signals
+        if confidence < 0.65:
+            return TradeAction.HOLD
+        
+        # Strong sentiment signals
+        if overall_sentiment > 0.6:
+            return TradeAction.BUY
+        elif overall_sentiment < -0.6:
+            return TradeAction.SELL
+        
+        # Moderate sentiment signals
+        if overall_sentiment > 0.3:
+            return TradeAction.BUY
+        elif overall_sentiment < -0.3:
+            return TradeAction.SELL
+        
+        return TradeAction.HOLD
+    
+    # Helper methods
+    def _analyze_smart_money_options(self, put_call_ratio: float, unusual_activity: bool) -> str:
+        """Analyze smart money flow in options"""
+        if unusual_activity and put_call_ratio < 0.7:
+            return "bullish"
+        elif unusual_activity and put_call_ratio > 1.3:
+            return "bearish"
+        else:
+            return "neutral"
+    
+    def _score_options_sentiment(self, put_call_ratio: float, smart_money_flow: str) -> float:
+        """Score options sentiment (-1 to 1)"""
+        base_score = (1.0 - put_call_ratio) / 0.5  # Normalize around 1.0 P/C ratio
+        
+        if smart_money_flow == "bullish":
+            base_score += 0.3
+        elif smart_money_flow == "bearish":
+            base_score -= 0.3
+        
+        return max(-1.0, min(1.0, base_score))
+    
+    def _calculate_sentiment_momentum(self, sentiment_score: float) -> str:
+        """Calculate sentiment momentum direction"""
+        # Mock momentum calculation
+        momentum_indicator = hash(str(sentiment_score)) % 3
+        return ["improving", "stable", "deteriorating"][momentum_indicator]
+    
+    def _calculate_sentiment_agreement(self, sentiment_scores: Dict[str, float]) -> float:
+        """Calculate how much different sentiment sources agree"""
+        scores = list(sentiment_scores.values())
+        if not scores:
+            return 0.5
+        
+        # Calculate standard deviation of sentiment scores
+        mean_sentiment = sum(scores) / len(scores)
+        variance = sum((score - mean_sentiment) ** 2 for score in scores) / len(scores)
+        std_dev = variance ** 0.5
+        
+        # Convert to agreement score (lower std dev = higher agreement)
+        agreement = max(0.0, 1.0 - std_dev)
+        return agreement
+    
+    def _analyze_sentiment_momentum(self, sentiment_scores: Dict[str, float]) -> Dict[str, Any]:
+        """Analyze momentum across"""
+
+
 # Example usage and testing
 if __name__ == "__main__":
     async def test_market_analysis_agent():
