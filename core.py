@@ -198,7 +198,7 @@ class LLMConfig:
         self.timeout = 30  # seconds
         
         # Validate provider
-        supported_providers = ["openai", "anthropic", "deepseek" "local"]
+        supported_providers = ["openai", "anthropic", "deepseek", "local"]
         if provider not in supported_providers:
             raise ValueError(f"Provider must be one of {supported_providers}")
 

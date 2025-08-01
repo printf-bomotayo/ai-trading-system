@@ -30,7 +30,7 @@ class NewsIntelligenceAgent(BaseAgent):
         super().__init__(AgentType.NEWS_INTELLIGENCE)
         self.llm_service = llm_service
         self.news_sources = [
-            "Reuters", "Bloomberg", "CNBC", "SEC Filings", 
+            "Reuters", "Bloomberg", "CNBC", "SEC Filings", "Finimize",
             "Company Press Releases", "Fed Announcements"
         ]
         
