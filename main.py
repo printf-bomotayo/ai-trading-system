@@ -14,12 +14,20 @@ import uuid
 import logging
 
 # Import our modular components
-from .core import (
-    MarketData, NewsEvent, MarketEventType, LLMConfig
-)
-from .orchestrator import OrchestratorCore
-from .llm_service import LLMService
-from .agents import create_agent_suite
+try:
+    from .core import (
+        MarketData, NewsEvent, MarketEventType, LLMConfig
+    )
+    from .orchestrator import OrchestratorCore
+    from .llm_service import LLMService
+    from .agents import create_agent_suite
+except ImportError:
+    from core import (
+        MarketData, NewsEvent, MarketEventType, LLMConfig
+    )
+    from orchestrator import OrchestratorCore
+    from llm_service import LLMService
+    from agents import create_agent_suite
 
 logger = logging.getLogger(__name__)
 

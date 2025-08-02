@@ -34,11 +34,11 @@ async def main():
         
         # Test DSN generation
         dsn = config.get_dsn()
-        admin_dsn = config.get_admin_dsn()
+        # admin_dsn = config.get_admin_dsn()
         
         print("OK DSN generation working")
         print(f"  DSN: {dsn}")
-        print(f"  Admin DSN: {admin_dsn}")
+        # print(f"  Admin DSN: {admin_dsn}")
         print()
         
         # Test database connection (this will only work if PostgreSQL is running)

@@ -13,10 +13,16 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime
 import aiohttp
 
-from .core import (
-    LLMConfig, LLMRequest, LLMResponse, MarketData, NewsEvent, 
-    AgentType, MarketEventType, TradeAction
-)
+try:
+    from .core import (
+        LLMConfig, LLMRequest, LLMResponse, MarketData, NewsEvent, 
+        AgentType, MarketEventType, TradeAction
+    )
+except ImportError:
+    from core import (
+        LLMConfig, LLMRequest, LLMResponse, MarketData, NewsEvent, 
+        AgentType, MarketEventType, TradeAction
+    )
 
 logger = logging.getLogger(__name__)
 

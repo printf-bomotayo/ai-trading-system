@@ -11,11 +11,18 @@ from datetime import datetime, timedelta
 import logging
 import uuid
 
-from .core import (
-    BaseAgent, AgentResponse, MarketData, NewsEvent,
-    AgentType, TradeAction, MarketEventType
-)
-from .llm_service import LLMService
+try:
+    from .core import (
+        BaseAgent, AgentResponse, MarketData, NewsEvent,
+        AgentType, TradeAction, MarketEventType
+    )
+    from .llm_service import LLMService
+except ImportError:
+    from core import (
+        BaseAgent, AgentResponse, MarketData, NewsEvent,
+        AgentType, TradeAction, MarketEventType
+    )
+    from llm_service import LLMService
 
 logger = logging.getLogger(__name__)
 

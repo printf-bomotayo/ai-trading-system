@@ -15,6 +15,17 @@ from datetime import datetime, timedelta
 from dataclasses import asdict
 import json
 import uuid
+from dotenv import load_dotenv
+import traceback
+
+load_dotenv()   
+
+print(os.getenv('DB_HOST', 'localhost'))
+
+print(os.getenv('DB_PORT', 'localhost'))
+
+print(os.getenv('DB_USER', 'localhost'))
+
 
 import asyncpg
 from asyncpg import Connection, Pool
@@ -33,7 +44,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-class DatabaseConfig:
+class  DatabaseConfig:
     """Database configuration settings"""
     
     def __init__(self):
@@ -49,9 +60,9 @@ class DatabaseConfig:
         """Get database connection string"""
         return f"postgresql://{self.username}:{self.password}@{self.host}:{self.port}/{self.database}"
     
-    def get_admin_dsn(self) -> str:
-        """Get admin connection string (for database creation)"""
-        return f"postgresql://{self.username}:{self.password}@{self.host}:{self.port}/postgres"
+    # def get_admin_dsn(self) -> str:
+    #     """Get admin connection string (for database creation)"""
+    #     return f"postgresql://{self.username}:{self.password}@{self.host}:{self.port}/postgres"
 
 
 class DatabaseManager:
@@ -93,7 +104,7 @@ class DatabaseManager:
         
         try:
             # Connect to postgres database first
-            conn = await asyncpg.connect(self.config.get_admin_dsn())
+            conn = await asyncpg.connect(self.config.get_dsn())
             
             # Check if our database exists
             exists = await conn.fetchval(
@@ -111,6 +122,7 @@ class DatabaseManager:
             await conn.close()
             
         except Exception as e:
+            traceback.print_exc()
             logger.error(f"Error ensuring database exists: {e}")
             raise
     
@@ -145,6 +157,7 @@ class DatabaseManager:
                     logger.info(f"Schema version {current_version} is current")
                 
             except Exception as e:
+                traceback.print_exc()
                 logger.error(f"Error ensuring schema exists: {e}")
                 raise
     
@@ -820,11 +833,11 @@ if __name__ == "__main__":
     
     async def main():
         parser = argparse.ArgumentParser(description='Trading System Database Setup')
-        parser.add_argument('--host', default='localhost', help='Database host')
-        parser.add_argument('--port', type=int, default=5432, help='Database port')
-        parser.add_argument('--database', default='trading_system', help='Database name')
-        parser.add_argument('--username', default='postgres', help='Database username')
-        parser.add_argument('--password', help='Database password')
+        # parser.add_argument('--host', default='localhost', help='Database host')
+        # parser.add_argument('--port', type=int, default=5432, help='Database port')
+        # parser.add_argument('--database', default='trading_system', help='Database name')
+        # parser.add_argument('--username', default='postgres', help='Database username')
+        # parser.add_argument('--password', help='Database password')
         parser.add_argument('--force-recreate', action='store_true', help='Force recreate schema')
         parser.add_argument('--test-only', action='store_true', help='Only test connection')
         parser.add_argument('--cleanup', type=int, help='Cleanup data older than N days')
@@ -834,16 +847,16 @@ if __name__ == "__main__":
         
         # Setup configuration
         config = DatabaseConfig()
-        if args.host:
-            config.host = args.host
-        if args.port:
-            config.port = args.port
-        if args.database:
-            config.database = args.database
-        if args.username:
-            config.username = args.username
-        if args.password:
-            config.password = args.password
+        # if args.host:
+        #     config.host = args.host
+        # if args.port:
+        #     config.port = args.port
+        # if args.database:
+        #     config.database = args.database
+        # if args.username:
+        #     config.username = args.username
+        # if args.password:
+        #     config.password = args.password
         
         print("🗄️  AI Trading System - Database Setup")
         print("=" * 50)
@@ -925,3 +938,6 @@ async def test_database_connection(config: Optional[DatabaseConfig] = None) -> b
     except Exception as e:
         logger.error(f"Database connection test failed: {e}")
         return False
+
+
+        

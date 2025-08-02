@@ -1,0 +1,44 @@
+# AI Trading System - Python Dependencies
+
+# Core API Framework
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+python-multipart>=0.0.6
+
+# Data Validation and Serialization
+pydantic>=2.4.0
+email-validator>=2.0.0
+
+# Database
+asyncpg>=0.29.0
+sqlalchemy>=2.0.0
+
+# HTTP Client for LLM APIs
+aiohttp>=3.9.0
+httpx>=0.25.0
+
+# Environment and Configuration
+python-dotenv>=1.0.0
+pyyaml>=6.0
+
+# Date and Time
+python-dateutil>=2.8.0
+
+# Security
+cryptography>=41.0.0
+passlib[bcrypt]>=1.7.4
+python-jose[cryptography]>=3.3.0
+
+# Monitoring and Logging
+structlog>=23.2.0
+
+# Development and Testing (optional)
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+httpx>=0.25.0  # for testing FastAPI endpoints
+
+# Optional: Production WSGI server
+gunicorn>=21.2.0
+
+# Optional: OpenAPI documentation enhancements
+openapi-spec-validator>=0.7.0

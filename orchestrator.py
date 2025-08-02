@@ -11,10 +11,16 @@ from datetime import datetime, timedelta
 import asyncio
 import logging
 
-from .core import (
-    MarketData, NewsEvent, AgentResponse, PerformanceMetric,
-    BaseAgent, AgentType, MarketEventType, TradeAction
-)
+try:
+    from .core import (
+        MarketData, NewsEvent, AgentResponse, PerformanceMetric,
+        BaseAgent, AgentType, MarketEventType, TradeAction
+    )
+except ImportError:
+    from core import (
+        MarketData, NewsEvent, AgentResponse, PerformanceMetric,
+        BaseAgent, AgentType, MarketEventType, TradeAction
+    )
 
 logger = logging.getLogger(__name__)
 
